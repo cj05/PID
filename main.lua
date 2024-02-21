@@ -22,7 +22,7 @@ local setpoint = 1 -- this should be 1.... changing it breaks the tuning for som
 local loop = true
 local wavethreshold = 5 -- how many peaks to wait for before changing the tune sampler param
 local exitthreshold = 1e-5 -- how high the threshold is to exit the loop
-local rate = 0.5 -- rate of change of the PID
+local rate = 0.1 -- rate of change of the PID
 print("Autotuning")
 
 local tuner = PIDtuner:Tuner(controller, wavethreshold,exitthreshold)

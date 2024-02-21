@@ -1,7 +1,7 @@
 local ZN = {}
 
 --creates a tuner, why in a different file? oop standard and also it was so messy before i cant debug
-function ZN:Tuner(pid, wavethreshold, exitthreshold, o)
+function ZN:Tuner(pid, wavethreshold, exitthreshold, callback, o)
   o = o or {}
   setmetatable(o, self)
   self.__index = self
@@ -9,15 +9,16 @@ function ZN:Tuner(pid, wavethreshold, exitthreshold, o)
   self.exit = exitthreshold or 1e-5
   self.pid = pid
   print("Setting Initial Parameters")
-  self.pid:reconfig(0, 0, 0)
+  local f = (callback or self.pid.reconfig)
+  f(self.pid, 0, 0, 0)
   return o
 end
 
 --monitoring phase of the tuner
---you can also input in the error for custom pids
+--you can also input in the error
 --you can also input in a custom callback function for custom pids
 --returns if it is finished or not
-function ZN:Run(rate ,previous_error , callback )
+function ZN:Run(rate, previous_error, callback)
   local err = self.pid.previousErr or previous_error -- it pulls the pid's previous error or uses the given error
 
   self.ZN_history = self.ZN_history or {}
@@ -53,13 +54,14 @@ function ZN:Run(rate ,previous_error , callback )
     for k, _ in pairs(self.ZN_history) do self.ZN_history[k] = nil end
     self.ZN_history[1] = carry
 
-    self:adjust(rate,callback)
+    self:adjust(rate, callback)
   end
   return true
 end
 
-function ZN:adjust(offset,callback)
-    (callback or self.pid.reconfig)(self.pid,self.pid.Kp + offset, 0, 0)
+function ZN:adjust(offset, callback)
+  local f = (callback or self.pid.reconfig)
+  f(self.pid, self.pid.Kp + offset, 0, 0)
   print("Adjusted Kp Up", self.pid.Kp)
 end
 
@@ -99,7 +101,7 @@ end
 
 --applies the tuner
 --you can also input in a custom callback function for custom pids
-function ZN:Apply(mode , callback) -- https://en.wikipedia.org/wiki/Ziegler%E2%80%93Nichols_method
+function ZN:Apply(mode, callback) -- https://en.wikipedia.org/wiki/Ziegler%E2%80%93Nichols_method
   local weight_table = {
     ["P"] = { 0.5, 0, 0 },
     ["PI"] = { 0.45, 0.54, 0 },
@@ -110,7 +112,7 @@ function ZN:Apply(mode , callback) -- https://en.wikipedia.org/wiki/Ziegler%E2%8
     ["NO-OVERSHOOT"] = { 0.2, 0.4, 1 / 15 },
   }
   local weights = weight_table[mode]
-  local f = (callback or self.pid.reconfig) 
+  local f = (callback or self.pid.reconfig)
   f(self.pid, weights[1] * self.ZN_Result_Amplitude,
     weights[2] * self.ZN_Result_Amplitude / self.ZN_Result_Period,
     weights[3] * self.ZN_Result_Amplitude * self.ZN_Result_Period)
