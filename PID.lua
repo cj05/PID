@@ -39,9 +39,9 @@ function PID:update(setpoint, current, dt)
 
   self.Iaccumulated = self.CalculateIntegral(err, self.Iaccumulated, dt)
   local Imaxclamped = self.Iaccumulated
-  if self.Imax ~= nil then math.min(self.Iaccumulated, self.Imax) end
+  if self.Imax ~= nil then Imaxclamped = math.min(Imaxclamped, self.Imax) end
   local Iminclamped = Imaxclamped
-  if self.Imin ~= nil then math.max(self.Iminclamped, self.Imin) end
+  if self.Imin ~= nil then Iminclamped = math.max(Iminclamped, self.Imin) end
   self.Iaccumulated = Iminclamped
   local I = self.Iaccumulated * self.Ki
 
